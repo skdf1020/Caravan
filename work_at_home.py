@@ -39,14 +39,14 @@ valid_path = pathlib.WindowsPath(base_path / "valid")
 train_dataset = NST_dataset(train_path, transform=transform, with_name=True)
 valid_dataset = NST_dataset(valid_path, transform=transform_val, with_name=True)
 
-trn_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_loader = DataLoader(valid_dataset, batch_size=16, shuffle=False)
+trn_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+val_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 criterion = nn.BCELoss()
-learning_rate = 1e-5
-optimizer = optim.Adam(net.parameters(), lr=learning_rate, weight_decay=1e-5)
+learning_rate = 1e-3
+optimizer = optim.Adam(net.parameters(), lr=learning_rate)
 
-num_epochs = 100
+num_epochs = 10
 num_batches = len(trn_loader)
 
 trn_loss_list = []
@@ -64,49 +64,51 @@ for epoch in range(num_epochs):
         # print(model_output)
         loss = criterion(model_output, labels)
 
-        name = data['name']
-        print(name)
+        # name = data['name']
+        # print(name)
 
         loss.backward()
         optimizer.step()
 
         trn_loss += loss.item()
+        # for param in net.parameters():
+        #     print(param.data)
+        if i % 5 == 0:
+            with torch.no_grad():
+                val_loss = 0.0
+                total, correct = 0, 0
+                for j, val in enumerate(val_loader, 0):
+                    val_x, val_label = val['input'].to(device), val['label'].to(device)
 
-    with torch.no_grad():
-        val_loss = 0.0
-        total, correct = 0, 0
-        for j, val in enumerate(val_loader, 0):
-            val_x, val_label = val['input'].to(device), val['label'].to(device)
+                    val_output = net(val_x)
+                    val_label = val_label.view(-1, 1)
+                    v_loss = criterion(val_output, val_label)
+                    val_loss += v_loss.item()
 
-            val_output = net(val_x)
-            val_label = val_label.view(-1, 1)
-            v_loss = criterion(val_output, val_label)
-            val_loss += v_loss.item()
+                    predicted = torch.round(val_output)
 
-            predicted = torch.round(val_output)
+                    total += val_label.size(0)
+                    correct += (predicted == val_label).sum().item()
 
-            total += val_label.size(0)
-            correct += (predicted == val_label).sum().item()
+                print("epoch: {}/{} | trn loss: {:.4f} | val loss: {:.4f} | val acc: {:.4f}".format(
+                    epoch + 1,
+                    num_epochs,
+                    trn_loss / 5,
+                    val_loss / len(val_loader),
+                    correct / total
+                ))
+                print(correct, total)
 
-    print("epoch: {}/{} | trn loss: {:.4f} | val loss: {:.4f} | val acc: {:.4f}".format(
-        epoch + 1,
-        num_epochs,
-        trn_loss / len(trn_loader),
-        val_loss / len(val_loader),
-        correct / total
-    ))
-    print(correct, total)
-
-    trn_loss_list.append(trn_loss / len(trn_loader))
-    val_loss_list.append(val_loss / len(val_loader))
-    val_acc_list.append(correct / total)
-    trn_loss = 0.0
+                trn_loss_list.append(trn_loss / 5)
+                val_loss_list.append(val_loss / len(val_loader))
+                val_acc_list.append(correct / total)
+                trn_loss = 0.0
 
 print('Finished Training')
 
 
-# csvfile = open('nstnet3_3_v2_200906_3_result.csv', 'w', newline='')
-# csvwriter = csv.writer(csvfile)
-# for row in zip(trn_loss_list, val_loss_list, val_acc_list):
-#     csvwriter.writerow(row)
-# csvfile.close()
+csvfile = open('records/nstnet_tcn_result_0921.csv', 'w', newline='')
+csvwriter = csv.writer(csvfile)
+for row in zip(trn_loss_list, val_loss_list, val_acc_list):
+    csvwriter.writerow(row)
+csvfile.close()

@@ -7,36 +7,34 @@ class Chomp1d(nn.Module):
     def __init__(self, chomp_size):
         super(Chomp1d, self).__init__()
         self.chomp_size = chomp_size
-        print(chomp_size)
-    # def forward(self, x):
-    #     return x[:, :, self.chomp_size:].contiguous()
+
     def forward(self, x):
-        print(x)
         x = x[:, :, :-self.chomp_size].contiguous()
-        print(x)
         return x
 
 
 class TemporalBlock(nn.Module):
     def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout=0.2):
         super(TemporalBlock, self).__init__()
-        self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size,
-                                           stride=stride, padding=padding, dilation=dilation))
+        self.bn1 = nn.BatchNorm1d(n_inputs)
+        self.conv1 = nn.Conv1d(n_inputs, n_outputs, kernel_size,
+                                           stride=stride, padding=padding, dilation=dilation)
         self.chomp1 = Chomp1d(padding)
         self.relu1 = nn.ReLU()
         self.dropout1 = nn.Dropout2d(dropout)
 
-        self.conv2 = weight_norm(nn.Conv1d(n_outputs, n_outputs, kernel_size,
-                                           stride=stride, padding=padding, dilation=1))
-        self.chomp2 = Chomp1d(padding)
+        self.bn2 = nn.BatchNorm1d(n_outputs)
+        self.conv2 = nn.Conv1d(n_outputs, n_outputs, kernel_size,
+                                           stride=stride, padding=(kernel_size-1)*1, dilation=1)
+        self.chomp2 = Chomp1d((kernel_size-1)*1)
         self.relu2 = nn.ReLU()
         self.dropout2 = nn.Dropout2d(dropout)
 
-        self.net = nn.Sequential(self.conv1, self.chomp1, self.relu1, self.dropout1,
-                                 self.conv2, self.chomp2, self.relu2, self.dropout2)
+        self.net = nn.Sequential(self.bn1, self.conv1, self.chomp1, self.relu1, self.dropout1,
+                                 self.bn2, self.conv2, self.chomp2, self.relu2, self.dropout2)
         self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None
         self.relu = nn.ReLU()
-        self.init_weights()
+        # self.init_weights()
 
     def init_weights(self):
         self.conv1.weight.data.normal_(0, 0.01)
@@ -45,22 +43,38 @@ class TemporalBlock(nn.Module):
             self.downsample.weight.data.normal_(0, 0.01)
 
     def forward(self, x):
-        print(x)
-        res = x if self.downsample is None else self.downsample(x)
-        x = self.conv1(x)
-        print(x)
-        x = self.chomp1(x)
-        print(x)
-        x = self.relu1(x)
-        print(x)
-        x = self.dropout1(x)
-        print(x)
-        out = x
-        # out = self.net(x)
-
+        # print('input', x)
+        # print(x.shape)
         # res = x if self.downsample is None else self.downsample(x)
-        print(res)
-        print(out+res)
+        # x = self.conv1(x)
+        # print('conv', x.shape)
+        # print(x)
+        # x = self.bn1(x)
+        # print(x)
+        # x = self.chomp1(x)
+        # print('chomp', x.shape)
+        # x = self.relu1(x)
+        # print(x.shape)
+        # x = self.dropout1(x)
+        # print(x.shape)
+        # x = self.conv2(x)
+        # print('conv', x.shape)
+        # print(x)
+        # x = self.bn2(x)
+        # x = self.chomp2(x)
+        # print('chomp', x.shape)
+        # x = self.relu2(x)
+        # print(x.shape)
+        # x = self.dropout2(x)
+        # print(x.shape)
+        # out = x
+        out = self.net(x)
+        # print(out.shape)
+
+        res = x if self.downsample is None else self.downsample(x)
+        # print(res.shape)
+        # print(res)
+        # print(out+res)
 
         return self.relu(out + res)
 
@@ -88,9 +102,36 @@ class TCN(nn.Module):
         super(TCN, self).__init__()
         self.tcn = TemporalConvNet(input_size, num_channels, kernel_size=kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], output_size)
+        self.linear.weight.data.normal_(0, 0.01)
+        # self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs):
         """Inputs have to have dimension (N, C_in, L_in)"""
         y1 = self.tcn(inputs)  # input should have dimension (N, C, L)
+        # print(y1)
+        # print('last', y1[:, :, -1])
+        # print('last', y1[:, :, -2])
+        # print('last', y1[:, :, -3])
+        # print('last', y1[:, :, -4])
+        # print('last', y1[:, :, -5])
+        # print('last', y1[:, :, 1])
+        # print('last', y1[:, :, 2])
+        # print('last', y1[:, :, 3])
+        # print('last', y1[:, :, 4])
+        # print('last', y1[:, :, 5])
+
         o = self.linear(y1[:, :, -1])
-        return F.log_softmax(o, dim=1)
+        # result = F.log_softmax(o, dim=1)
+        # print(result, result.shape)
+        o = self.sigmoid(o)
+        # print('out', o)
+        # print(o.shape)
+        return o
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features

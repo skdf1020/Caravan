@@ -1,6 +1,7 @@
 import torch
 import random
 from torch.utils.data import Dataset
+from torch.nn.functional import pad
 import numpy as np
 
 
@@ -17,7 +18,12 @@ class NST_dataset(Dataset):
     def __getitem__(self, idx):
         # x = np.load(str(self.files[idx]))
         # x = torch.from_numpy(str(self.files[idx])).float()
-        x = np.loadtxt(str(self.files[idx]), delimiter=',')
+        x = np.loadtxt(self.files[idx], delimiter=',')
+        # print(x)
+        _fhr = x[:, 1]
+        _uc = x[:, 2]
+        x = np.stack([_fhr, _uc], axis=0)
+        # print(x)
         label = int(self.files[idx].parts[-2])
         sample = {'input': x, 'label': label}
 
@@ -28,7 +34,7 @@ class NST_dataset(Dataset):
             names = self.files[idx].stem.split('_')
             name = '{}_{}'.format(names[0], names[1])
             sample['name'] = name
-
+        # print(sample)
         return sample
 
 
@@ -54,7 +60,7 @@ class GoTensor(object):
         label = torch.as_tensor(label).float()
 
         sample = {'input': inp, 'label': label}
-
+        # print(sample)
         return sample
 
 
@@ -104,6 +110,17 @@ class TimeMask(object):
         format_string = self.__class__.__name__ + "(max_width="
         format_string += str(self.max_width) + ")"
         return format_string
+
+
+class zero_pad(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, sample):
+        tensor, label = sample['input'], sample['label']
+        tensor = pad(tensor, (self.size-tensor.shape[1], 0), "constant", 0)
+        sample = {'input': tensor, 'label': label}
+        return sample
 
 
 class EarlyStopping:
