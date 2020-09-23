@@ -6,11 +6,12 @@ import numpy as np
 
 
 class NST_dataset(Dataset):
-    def __init__(self, path, transform=None, with_name=False):
+    def __init__(self, path, transform=None, with_name=False, resolution=1):
         self.path = path
         self.files = list(path.glob('**/*.csv'))
         self.transform = transform
         self.with_name = with_name
+        self.resolution = resolution
 
     def __len__(self):
         return len(list(self.path.glob('**/*.csv')))
@@ -22,6 +23,9 @@ class NST_dataset(Dataset):
         # print(x)
         _fhr = x[:, 1]
         _uc = x[:, 2]
+
+        _fhr = _fhr[::int(1/self.resolution)]
+        _uc = _uc[::int(1/self.resolution)]
         x = np.stack([_fhr, _uc], axis=0)
         # print(x)
         label = int(self.files[idx].parts[-2])
@@ -44,6 +48,7 @@ class OneHotEncoding(object):
 
     def __call__(self, sample):
         tensor, label = sample['input'], sample['label']
+        print(label)
         label = self.encoder[label]
 
         sample = {'input': tensor, 'label': label}
@@ -58,6 +63,7 @@ class GoTensor(object):
 
         label = sample['label']
         label = torch.as_tensor(label).float()
+        # label = torch.as_tensor(label).long()
 
         sample = {'input': inp, 'label': label}
         # print(sample)
@@ -96,12 +102,12 @@ class TimeMask(object):
     def __call__(self, sample):
         tensor, label = sample['input'], sample['label']
 
-        start = random.randrange(0, tensor.shape[2] - self.max_width)
+        start = random.randrange(0, tensor.shape[1] - self.max_width)
         end = start + random.randrange(0, self.max_width)
         if self.use_mean:
-            tensor[:, :, start:end] = tensor.mean()
+            tensor[:, start:end] = tensor.mean()
         else:
-            tensor[:, :, start:end] = 0
+            tensor[:, start:end] = 0
 
         sample = {'input': tensor, 'label': label}
         return sample
@@ -110,6 +116,42 @@ class TimeMask(object):
         format_string = self.__class__.__name__ + "(max_width="
         format_string += str(self.max_width) + ")"
         return format_string
+
+
+class RandomShift(object):
+    def __init__(self, max_dist):
+        self.max_dist = max_dist
+
+    def __call__(self, sample):
+        tensor, label = sample['input'], sample['label']
+
+        dist = random.randrange(-self.max_dist, self.max_dist)
+
+        if dist >= 0:
+            tensor = pad(tensor, (0, dist), "constant", 0)
+
+        else:
+            tensor = tensor[:, :dist].contiguous()
+            pass
+
+        sample = {'input':tensor, 'label':label}
+        return sample
+
+
+class Jittering(object):
+    def __init__(self, center, sigma):
+        self.sigma = sigma
+        self.center = center
+
+    def __call__(self, sample):
+        tensor, label = sample['input'], sample['label']
+        rand = np.random.normal(self.center, self.sigma, (tensor.shape[0], tensor.shape[1]))
+        inp = torch.from_numpy(rand).float()
+
+        tensor += tensor + inp
+
+        sample = {'input': tensor, 'label': label}
+        return sample
 
 
 class zero_pad(object):
