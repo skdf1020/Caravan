@@ -7,13 +7,13 @@ class Chomp1d(nn.Module):
     def __init__(self, chomp_size):
         super(Chomp1d, self).__init__()
         self.chomp_size = chomp_size
-        print(chomp_size)
+        # print(chomp_size)
     # def forward(self, x):
     #     return x[:, :, self.chomp_size:].contiguous()
     def forward(self, x):
-        print(x)
+        # print(x)
         x = x[:, :, :-self.chomp_size].contiguous()
-        print(x)
+        # print(x)
         return x
 
 
@@ -45,22 +45,22 @@ class TemporalBlock(nn.Module):
             self.downsample.weight.data.normal_(0, 0.01)
 
     def forward(self, x):
-        print(x)
+        # print(x)
         res = x if self.downsample is None else self.downsample(x)
         x = self.conv1(x)
-        print(x)
+        # print(x)
         x = self.chomp1(x)
-        print(x)
+        # print(x)
         x = self.relu1(x)
-        print(x)
+        # print(x)
         x = self.dropout1(x)
-        print(x)
+        # print(x)
         out = x
         # out = self.net(x)
 
         # res = x if self.downsample is None else self.downsample(x)
-        print(res)
-        print(out+res)
+        # print(res)
+        # print(out+res)
 
         return self.relu(out + res)
 
