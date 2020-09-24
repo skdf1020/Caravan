@@ -7,19 +7,9 @@ class Chomp1d(nn.Module):
     def __init__(self, chomp_size):
         super(Chomp1d, self).__init__()
         self.chomp_size = chomp_size
-<<<<<<< HEAD:model/cnn/tcn2.py
-        # print(chomp_size)
-    # def forward(self, x):
-    #     return x[:, :, self.chomp_size:].contiguous()
-    def forward(self, x):
-        # print(x)
-        x = x[:, :, :-self.chomp_size].contiguous()
-        # print(x)
-=======
 
     def forward(self, x):
         x = x[:, :, :-self.chomp_size].contiguous()
->>>>>>> dcf8988239eac7aa8b8b71195ba9eedc7c6dc1e5:model/cnn/tcn.py
         return x
 
 
@@ -59,24 +49,6 @@ class TemporalBlock(nn.Module):
             self.downsample.weight.data.normal_(0, 0.01)
 
     def forward(self, x):
-<<<<<<< HEAD:model/cnn/tcn2.py
-        # print(x)
-        res = x if self.downsample is None else self.downsample(x)
-        x = self.conv1(x)
-        # print(x)
-        x = self.chomp1(x)
-        # print(x)
-        x = self.relu1(x)
-        # print(x)
-        x = self.dropout1(x)
-        # print(x)
-        out = x
-        # out = self.net(x)
-
-        # res = x if self.downsample is None else self.downsample(x)
-        # print(res)
-        # print(out+res)
-=======
         out = self.net(x)
         res = x if self.downsample is None else self.downsample(x)
 
@@ -93,11 +65,11 @@ class TemporalBlock2(nn.Module):
         self.relu1 = nn.ReLU()
 
         self.bn_b1 = nn.BatchNorm1d(n_outputs)
-        self.bottleneck1 = nn.Conv1d(n_outputs, n_outputs*3, kernel_size, padding=5)
+        self.bottleneck1 = nn.Conv1d(n_outputs, n_outputs*3, kernel_size, padding=3)
         self.relu_b1 = nn.ReLU()
 
         self.bn_b2 = nn.BatchNorm1d(n_outputs*3)
-        self.bottleneck2 = nn.Conv1d(n_outputs*3, n_outputs, kernel_size, padding=5)
+        self.bottleneck2 = nn.Conv1d(n_outputs*3, n_outputs, kernel_size, padding=3)
         self.relu_b2 = nn.ReLU()
         self.dropout1 = nn.Dropout2d(dropout)
 
@@ -128,7 +100,6 @@ class TemporalBlock2(nn.Module):
     def forward(self, x):
         out = self.net(x)
         res = x if self.downsample is None else self.downsample(x)
->>>>>>> dcf8988239eac7aa8b8b71195ba9eedc7c6dc1e5:model/cnn/tcn.py
 
         return self.relu(out + res)
 
@@ -157,28 +128,20 @@ class TCN(nn.Module):
         self.tcn = TemporalConvNet(input_size, num_channels, kernel_size=kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], output_size)
         self.linear.weight.data.normal_(0, 0.01)
-        # self.relu = nn.ReLU()
+        self.relu = nn.ReLU()
+        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.softmax = nn.Softmax(dim=1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs):
         """Inputs have to have dimension (N, C_in, L_in)"""
-        y1 = self.tcn(inputs)  # input should have dimension (N, C, L)
-        # print(y1)
-        # print('last', y1[:, :, -1])
-        # print('last', y1[:, :, -2])
-        # print('last', y1[:, :, -3])
-        # print('last', y1[:, :, -4])
-        # print('last', y1[:, :, -5])
-        # print('last', y1[:, :, 1])
-        # print('last', y1[:, :, 2])
-        # print('last', y1[:, :, 3])
-        # print('last', y1[:, :, 4])
-        # print('last', y1[:, :, 5])
-
+        y1 = self.tcn(inputs)
         o = self.linear(y1[:, :, -1])
-        # result = F.log_softmax(o, dim=1)
-        # print(result, result.shape)
-        o = self.sigmoid(o)
+        # o = self.relu(o)
+        # print(o)
+        # o = self.log_softmax(o)
+        o = self.softmax(o)
+        # o = self.sigmoid(o)
         # print('out', o)
         # print(o.shape)
         return o
