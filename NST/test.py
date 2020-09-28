@@ -31,7 +31,7 @@ def recep_cal(kernel, layer):
         result += (kernel-1)*(2**i+1)
     return result
 
-print(recep_cal(7, 9))
+print(recep_cal(3, 8))
 
 # import torch, torch.nn as nn
 #

@@ -9,7 +9,7 @@ import csv
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
-net = TCN(2, 2, [8, 8, 16, 16, 32, 32, 64, 64, 128], 7, 0)
+net = TCN(2, 6, [16, 16, 64, 64, 256, 256, 512, 512], 3, 0)
 
 if torch.cuda.device_count() > 1:
     print('use', torch.cuda.device_count(), 'GPUs')
@@ -20,31 +20,38 @@ net.to(device)
 transform = transforms.Compose([
     GoTensor(),
     Jittering(0, 0.05),
-    TimeMask(max_width=150, use_mean=False, is_1d=True),
-    RandomShift(150),
-    zero_pad(3121)
+    TimeMask(max_width=10, use_mean=False, is_1d=True),
+    # RandomShift(0),
+    zero_pad(527)
 ])
 transform_val = transforms.Compose([
     GoTensor(),
-    zero_pad(3121)
+    zero_pad(527)
 ])
 
-base_path = pathlib.PosixPath("/home/tj/Torch/Data/Datafolder/3_dataset_0924_preprocessed")
+base_path = pathlib.PosixPath("/home/tj/Torch/Data/Datafolder/3_dataset_0928_preprocessed")
 train_path = pathlib.PosixPath(base_path / "train")
 test_path = pathlib.PosixPath(base_path / "test")
 valid_path = pathlib.PosixPath(base_path / "valid")
 
-train_dataset = NST_dataset(train_path, transform=transform, have_name=True, resolution=4)
-valid_dataset = NST_dataset(valid_path, transform=transform_val, have_name=True, resolution=4)
+train_dataset = NST_dataset(train_path, transform=transform, have_name=True, resolution=20)
+valid_dataset = NST_dataset(valid_path, transform=transform_val, have_name=True, resolution=20)
 
 trn_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 val_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False)
 
-criterion = nn.CrossEntropyLoss()
-learning_rate = 1e-3
-optimizer = optim.Adam(net.parameters(), lr=learning_rate)#, #weight_decay=1e-4)
 
-num_epochs = 100
+weights = torch.tensor([478.0, 71.0, 20.0, 337.0, 21., 17.0], dtype=torch.float32)
+weights = weights / weights.sum()
+print(weights)
+weights = 1.0 / weights
+weights = weights / weights.sum()
+print(weights)
+criterion = nn.CrossEntropyLoss(weight=weights.cuda())
+learning_rate = 1e-3
+optimizer = optim.Adam(net.parameters(), lr=learning_rate, weight_decay=1e-4)
+
+num_epochs = 20
 num_batches = len(trn_loader)
 
 trn_loss_list = []
@@ -84,7 +91,8 @@ for epoch in range(num_epochs):
 
                     predicted = torch.argmax(val_output, dim=1)
                     # print(val_output)
-                    # print(predicted)
+                    print(predicted)
+                    print(val_label)
                     total += val_label.size(0)
                     correct += (predicted == val_label).sum().item()
 
@@ -105,7 +113,7 @@ for epoch in range(num_epochs):
 print('Finished Training')
 
 
-csvfile = open('records/0924_nstnet_tcn1_result.csv', 'w', newline='')
+csvfile = open('/home/tj/PycharmProjects/Caravan/records/0928_nstnet_tcn3_result.csv', 'w', newline='')
 csvwriter = csv.writer(csvfile)
 for row in zip(trn_loss_list, val_loss_list, val_acc_list):
     csvwriter.writerow(row)
