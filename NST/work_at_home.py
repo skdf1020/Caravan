@@ -1,14 +1,12 @@
 from torchvision import transforms
 from torch.utils.data import DataLoader
 import torch.optim as optim
-import torch.nn as nn
-import torch
-from base.nst_base import *
+
+from NST.base import *
 from model.cnn.tcn import *
 import pathlib
 import csv
-import numpy as np
-import os
+
 
 use_cuda = torch.cuda.is_available()
 
@@ -112,7 +110,7 @@ for epoch in range(num_epochs):
 print('Finished Training')
 
 
-csvfile = open('records/nstnet2_tcn_result_0923.csv', 'w', newline='')
+csvfile = open('../records/nstnet2_tcn_result_0923.csv', 'w', newline='')
 csvwriter = csv.writer(csvfile)
 for row in zip(trn_loss_list, val_loss_list, val_acc_list):
     csvwriter.writerow(row)
