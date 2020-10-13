@@ -63,8 +63,8 @@ class GoTensor(object):
         #         print(inp.size())
 
         label = sample['label']
-        # label = torch.as_tensor(label).float()
-        label = torch.as_tensor(label).long()  ## for CrossEntropyLoss
+        label = torch.as_tensor(label).float()
+        # label = torch.as_tensor(label).long()  ## for CrossEntropyLoss
 
         sample = {'input': inp, 'label': label}
 
