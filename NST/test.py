@@ -1,43 +1,40 @@
-# import torch
-# import torch.nn.functional as F
-#
-# t4d = torch.empty(3, 3, 4, 2)
-# p1d = (0,10)
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+# t4d = torch.empty(1, 1, 4)
+# p1d = (10, 10)
 #
 # print(F.pad(t4d, p1d, 'constant', 0))
-#
-# class testnet(nn.Module):
-#     def __init__(self):
-#         super(testnet, self).__init__()
-#         self.conv1 = nn.Conv1d(2, 4, 200)
-#         self.relu = nn.ReLU()
-#         self.fc = nn.Linear(4, 2)
-#         self.softmax = nn.Softmax(dim=1)
-#
-#     def forward(self, x):
-#         x = self.conv1(x)
-#         x = self.relu(x)
-#         # print(x.shape, x)
-#         x = x[:, :, -1]
-#         # print(x.shape, x)
-#         x = self.fc(x)
-#         x = self.relu(x)
-#         x = self.softmax(x)
-#         return x
 
-def recep_cal(kernel, layer):
-    result = 1
-    for i in range(layer):
-        result += (kernel-1)*(2**i+1)
-    return result
+class testnet(nn.Module):
+    def __init__(self):
+        super(testnet, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=4, out_channels=8, kernel_size=3, padding=1, stride=1, dilation=1, groups=4)
+        self.relu = nn.ReLU()
+        self.fc = nn.Linear(in_features=8, out_features=2)
+        # self.softmax = nn.Softmax(dim=1)
 
-print(recep_cal(3, 8))
+    def forward(self, x):
+        x = self.conv1(x)
+        print('after conv ', x, x.shape)
+        # x = self.relu(x)
+        x = x[:, :, -1]
+        print('after chomp ', x, x.shape)
+        x = self.fc(x)
+        print('output is ', x, x.shape)
+        # x = self.relu(x)
+        # x = self.softmax(x)
+        return x
 
-# import torch, torch.nn as nn
-#
-# loss = nn.CrossEntropyLoss()
-# input = torch.randn(3, 5, requires_grad=True)
-# target = torch.empty(3, dtype=torch.long).random_(5)
-# print(input, target)
-# output = loss(input, target)
-# print(output)
+loss = nn.CrossEntropyLoss()
+input = torch.randn(1, 4, 5, requires_grad=True)
+target = torch.empty(1, dtype=torch.long).random_(2)
+print('input is ', input)
+print('target is ', target)
+net = testnet()
+print(list(net.named_parameters()))
+output = net(input)
+loss = loss(output, target).item()
+print('loss is ', loss)
