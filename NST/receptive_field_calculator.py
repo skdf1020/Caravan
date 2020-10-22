@@ -1,43 +1,32 @@
-# import torch
-# import torch.nn.functional as F
+# def recep_cal(kernel, layer):
+#     result = 1
+#     for i in range(layer):
+#         result += (kernel-1)*(2**i+1)
+#     return result
 #
-# t4d = torch.empty(3, 3, 4, 2)
-# p1d = (0,10)
-#
-# print(F.pad(t4d, p1d, 'constant', 0))
-#
-# class testnet(nn.Module):
-#     def __init__(self):
-#         super(testnet, self).__init__()
-#         self.conv1 = nn.Conv1d(2, 4, 200)
-#         self.relu = nn.ReLU()
-#         self.fc = nn.Linear(4, 2)
-#         self.softmax = nn.Softmax(dim=1)
-#
-#     def forward(self, x):
-#         x = self.conv1(x)
-#         x = self.relu(x)
-#         # print(x.shape, x)
-#         x = x[:, :, -1]
-#         # print(x.shape, x)
-#         x = self.fc(x)
-#         x = self.relu(x)
-#         x = self.softmax(x)
-#         return x
+# print(recep_cal(3, 8))
 
-def recep_cal(kernel, layer):
-    result = 1
-    for i in range(layer):
-        result += (kernel-1)*(2**i+1)
-    return result
+import numpy as np
+import torch
+import torch.nn
 
-print(recep_cal(3, 8))
+a = np.array([[0,1],
+              [0,1]])
+b = np.array([[1, 1],
+              [0, 0]])
+print(a *b)
 
-# import torch, torch.nn as nn
+# print(np.sum(np.array([[0.6782, -0.9454,  0.7964],
+#                        [-0.4481,  1.2796, -0.3829],
+#                        [1.0135, -0.1141,  0.9145],
+#                        [-0.6902, -0.5975, -0.7088]]) *
+#              np.array([[0.1114, -0.2197, -0.0955],
+#                        [0.3702,  0.3041, -0.1755],
+#                        [0.2317, -0.1827, -0.1392],
+#                        [0.2496, -0.1033, -0.4330]])) + 0.0130)
+
+print(np.sum(np.array([[-0.2927, -1.0048, -0.4284]]) *
+             np.array([[-0.1015,  0.3382, -0.4336]])) + 0.5383)
 #
-# loss = nn.CrossEntropyLoss()
-# input = torch.randn(3, 5, requires_grad=True)
-# target = torch.empty(3, dtype=torch.long).random_(5)
-# print(input, target)
-# output = loss(input, target)
-# print(output)
+# a = torch.tensor([[-0.4315, -0.2637, -0.15], [0.4405, -1.3394, 2.0857]])
+# b = torch.tensor()
