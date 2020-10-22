@@ -65,11 +65,11 @@ class TemporalBlock2(nn.Module):
         self.relu1 = nn.ReLU()
 
         self.bn_b1 = nn.BatchNorm1d(n_outputs)
-        self.bottleneck1 = nn.Conv1d(n_outputs, n_outputs*3, kernel_size, padding=3)
+        self.bottleneck1 = nn.Conv1d(n_outputs, n_outputs*3, kernel_size, padding=1)
         self.relu_b1 = nn.ReLU()
 
         self.bn_b2 = nn.BatchNorm1d(n_outputs*3)
-        self.bottleneck2 = nn.Conv1d(n_outputs*3, n_outputs, kernel_size, padding=3)
+        self.bottleneck2 = nn.Conv1d(n_outputs*3, n_outputs, kernel_size, padding=1)
         self.relu_b2 = nn.ReLU()
         self.dropout1 = nn.Dropout2d(dropout)
 
