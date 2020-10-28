@@ -63,8 +63,8 @@ class GoTensor(object):
         #         print(inp.size())
 
         label = sample['label']
-        label = torch.as_tensor(label).float()
-        # label = torch.as_tensor(label).long()  ## for CrossEntropyLoss
+        # label = torch.as_tensor(label).float()
+        label = torch.as_tensor(label).long()  ## for CrossEntropyLoss
 
         sample = {'input': inp, 'label': label}
 
@@ -140,6 +140,21 @@ class RandomShift(object):
             pass
 
         sample = {'input':tensor, 'label':label}
+        return sample
+
+
+class Permutation(object):
+    def __init__(self, n):
+        self.perm = torch.randperm(n)
+
+    def __call__(self, sample):
+        tensor, label = sample['input'], sample['label']
+        length = tensor.shape[1]//5
+        new_tensor = torch.tensor([])
+        for i in self.perm:
+            new_tensor = torch.cat((new_tensor, tensor[:,i*length:(i+1)*length]), dim=1)
+
+        sample = {'input':new_tensor, 'label':label}
         return sample
 
 

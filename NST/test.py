@@ -11,7 +11,7 @@ import torch.nn.functional as F
 class testnet(nn.Module):
     def __init__(self):
         super(testnet, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=4, out_channels=8, kernel_size=3, padding=1, stride=1, dilation=1, groups=4)
+        self.conv1 = nn.Conv1d(in_channels=4, out_channels=8, kernel_size=3, padding=1, stride=1, dilation=1, groups=4, bias=False)
         self.relu = nn.ReLU()
         self.fc = nn.Linear(in_features=8, out_features=2)
         # self.softmax = nn.Softmax(dim=1)

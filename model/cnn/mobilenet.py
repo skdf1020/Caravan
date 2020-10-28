@@ -53,6 +53,58 @@ class MobileNetV1(nn.Module):
         x = self.fc(x)
         return x
 
+class MobileNetV1_1d(nn.Module):
+    def __init__(self, ch_in, n_classes):
+        super(MobileNetV1_1d, self).__init__()
+
+        def conv_bn(inp, oup, stride):
+            return nn.Sequential(
+                nn.Conv1d(in_channels=inp, out_channels=oup, kernel_size=3, stride=stride, padding=1, bias=True),
+                nn.BatchNorm1d(oup),
+                nn.ReLU(inplace=True)
+                )
+
+        def conv_dw(inp, oup, stride):
+            return nn.Sequential(
+                # dw
+                nn.Conv1d(in_channels=inp, out_channels=inp, kernel_size=3, stride=stride, padding=1, groups=inp, bias=True),
+                nn.BatchNorm1d(inp),
+                nn.ReLU(inplace=True),
+
+                # pw
+                nn.Conv1d(inp, oup, 1, 1, 0, bias=True),
+                nn.BatchNorm1d(oup),
+                nn.ReLU(inplace=True),
+                )
+
+        self.model = nn.Sequential(
+            conv_bn(ch_in, 32, 2),
+            conv_dw(32, 64, 1),
+            conv_dw(64, 128, 2),
+            conv_dw(128, 128, 1),
+            conv_dw(128, 256, 2),
+            conv_dw(256, 256, 1),
+            conv_dw(256, 512, 2),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 1024, 2),
+            conv_dw(1024, 1024, 1),
+            nn.AdaptiveAvgPool1d(1)
+        )
+        self.fc = nn.Linear(1024, n_classes)
+
+    def forward(self, x):
+        # print(x.shape)
+        x = self.model(x)
+        # print(x.shape)
+        x = x.view(-1, 1024)
+        # print(x.shape)
+        x = self.fc(x)
+        return x
+
 if __name__=='__main__':
     # model check
     model = MobileNetV1(ch_in=3, n_classes=1000)
